@@ -7,7 +7,11 @@ description: 在 Overleaf 或本地 LaTeX 论文项目中写作、修订、组�
 
 这是一套两层技能：`tools/` 提供 CLI、同步保护和编译；`writings/` 组织论文档案、证据、章节执行与审查。正文直接编辑论文现有 `.tex` 文件。
 
-`<skill_dir>` 指本文件所在安装目录；通过符号链接加载时，按真实目录解析相对路径。CLI 版本为 `0.3.0`，原有命令继续可用。
+`<skill_dir>` 指本文件所在安装目录；通过符号链接加载时，按真实目录解析相对路径。CLI 版本为 `0.3.1`，原有命令继续可用。
+
+## 安装检查
+
+首次使用先检查 CLI 是否可用，必要时用完整安装目录内 `.venv/bin/overleaf-ctl`（Windows 为 `.venv/Scripts/overleaf-ctl.exe`）。缺依赖时按 [README](README.md#接入与使用) 和 `scripts/install.py --check` 定位；只读 Skill 文件不会安装运行环境。完整使用需要 Python ≥ 3.10 与 Git，Node 可选，TeX 仅在本地编译时需要。不要把链接到另一份源码的旧命令当作当前版本。
 
 ## 按请求加载
 

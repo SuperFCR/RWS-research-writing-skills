@@ -1,4 +1,4 @@
-# overleaf-ctl 0.3.0
+# overleaf-ctl 0.3.1
 
 Overleaf/LaTeX 论文工作台：工具层负责本地编译与受保护的 Git 同步，写作层负责项目档案、证据、分章执行和审查。
 
@@ -25,23 +25,31 @@ overleaf-ctl/
 
 ## 接入与使用
 
-已有安装先使用 `overleaf-ctl --version` 检查，版本应为 `0.3.0`。从仓库接入时，在本目录运行：
+安装前准备 Python ≥ 3.10（含 pip/venv）和 Git。在本目录运行：
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
-node scripts/link-skill.js codex
-.venv/bin/overleaf-ctl --help
+python3 scripts/install.py --link-skill codex --link-cli
+source .venv/bin/activate
+overleaf-ctl --version
+python3 scripts/install.py --check
 ```
 
-也可沿用 `npm run setup`、`npm link`。这些路径需要 Python >= 3.10；npm 路径另需 Node >= 18。安装脚本与平台细节见 [CLI 参考](tools/references/cli.md)。编译需要已有 LaTeX 工具链，只有相应请求才运行完整环境安装。
+这条路径无需 Node，默认只安装 CLI 运行依赖 click/rich；不安装 TeX 或测试依赖。pip 在隔离构建环境处理 setuptools/wheel，并尊重已有 pip 配置，可用 `--index-url` 显式选择源。安装器拒绝覆盖其他安装的链接。
+
+Windows 可用 `py -3.11 scripts/install.py --link-skill codex`，然后调用 `.venv\Scripts\overleaf-ctl.exe`；不传 `--link-cli`。完整 Skill 目录需要与 tools/writings 一起保留。
+
+npm 方式可选：`npm run setup` 调用同一个 Python 安装器，之后按需 `npm link` 和 `npm run link:skill:codex`。`setup.sh` 也是最小 CLI 安装入口；旧的自动 TeX 全量安装入口已移除。编译时另需 LaTeX 引擎和 latexmk，自动补包另需 tlmgr。
+
+命令不在 PATH 时激活 venv，或使用 `.venv/bin/overleaf-ctl`；`--link-cli` 只创建 `~/.local/bin` 下的链接，不修改 shell 配置。`--check` 是无网络、无凭据访问的只读检查，缺少可选 TeX 工具不影响 CLI 就绪结果。
 
 ```bash
 overleaf-ctl list
 overleaf-ctl status ALIAS
 overleaf-ctl writing init ALIAS             # 只补 .writing/，不改变 TeX
+overleaf-ctl writing init --path /path/to/local-git-paper  # 不需要 Overleaf 远端
 overleaf-ctl writing init ALIAS --scaffold  # 空项目才创建 sections/ 模板
 overleaf-ctl compile ALIAS --no-auto-install
+overleaf-ctl compile --path /path/to/local-paper --no-auto-install
 overleaf-ctl check-push ALIAS               # 无网络预检
 overleaf-ctl sync ALIAS --message "Revise introduction"
 ```
@@ -55,7 +63,7 @@ overleaf-ctl sync ALIAS --message "Revise introduction"
 - 证据整理后建立贡献主线，使用反防御性表达减少自贬与过程流水账，保留必要的不利结果和结论边界。
 - 整篇起草/重写按主要章节分派独立子代理，主代理整合共享文件并做两阶段审查。局部修改保持局部范围。
 - 正文直接写进活动 `.tex`，保留用户既有 `sections/`、`sec/` 和文件名，不生成平行 Markdown 章节或额外 LaTeX 工程。
-- 新模板为 `main.tex`、`references.bib` 和 `sections/0_abstract.tex` 至 `6_broader_impact.tex`，附 `X_appendix.tex`。第 6 章、附录和 bibliography 按实际需要启用；有现有 TeX 或模板时拒绝覆盖。
+- 新模板为 `main.tex`、`references.bib` 和 `sections/0_abstract.tex` 至 `6_broader_impact.tex`，附 `X_appendix.tex`。第 6 章、附录和 bibliography 按实际需要启用；有现有 .tex/.cls/.sty/.bst 模板时拒绝覆盖。
 
 详见 [写作层](writings/SKILL.md) 和 [项目布局](writings/references/project-layout.md)。质量审查由代理结合实际资料完成，CLI 的检查不证明学术结论正确。
 
@@ -80,10 +88,15 @@ overleaf-ctl writing init ALIAS --local-only plan --local-only latex_outputs
 ## 验证
 
 ```bash
+python3 scripts/install.py --dev
 .venv/bin/python -m pytest -q
 node scripts/link-skill.js codex --dry-run
 npm pack --dry-run
 ```
+
+`--dev` 才安装 pytest 等测试依赖，`npm test` 仅运行测试，不会先改环境或联网安装。
+
+0.3.1 复查：228 项测试通过；macOS 全新虚拟环境完成最小依赖安装、技能/命令链接、环境检查、本地论文初始化和实际 PDF 编译。默认安装未包含 pytest，也未触发 TeX 安装。三个技能入口、相对引用与 npm 包清单检查通过。Windows/Linux 原生安装未作完整实测。
 
 测试使用本地临时 bare Git 仓库，不连接真实 Overleaf。旧版本设计文档保留在 `docs/` 作为历史记录，以当前技能和代码为准。
 

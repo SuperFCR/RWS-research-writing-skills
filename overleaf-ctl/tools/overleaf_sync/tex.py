@@ -43,11 +43,11 @@ def locate_tool(name: str) -> str | None:
 
 
 def require_tool(name: str) -> str:
-    """Locate `name` or raise TexNotFoundError pointing at setup.sh."""
+    """Locate `name` or raise TexNotFoundError pointing at the optional TeX setup documentation."""
     path = locate_tool(name)
     if path is None:
         raise TexNotFoundError(
-            f"找不到 TeX 工具 {name!r}。请先运行 setup.sh 安装 TinyTeX，"
+            f"找不到 TeX 工具 {name!r}。请按 README 的可选 TeX 依赖说明安装 LaTeX 工具链，"
             f"或确认 TinyTeX/MacTeX 已安装。"
         )
     return path
@@ -92,7 +92,7 @@ TINYTEX_INSTALL_URL = "https://yihui.org/tinytex/install-bin-unix.sh"
 
 
 def install_tinytex() -> None:
-    """Install TinyTeX (thin wrapper; mostly invoked by setup.sh)."""
+    """Legacy explicit TinyTeX helper; never called by the default installer."""
     subprocess.run(
         f'curl -sL "{TINYTEX_INSTALL_URL}" | sh',
         shell=True,

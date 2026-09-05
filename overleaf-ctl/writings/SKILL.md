@@ -7,13 +7,18 @@ description: 起草或修订 Overleaf/LaTeX 论文，在现有 TeX 章节上维�
 
 正文的唯一工作版本是论文项目中的 `.tex`。先读已有要求、当前主文件的 `\input`/`\include` 及有关章节，保留模板、命令、标签、引用键和用户选定的结构。现有上下文足够时直接推进，不要求固定轮数的访谈或逐章重复确认。
 
+CLI 不可用时先读 [工具层安装说明](../tools/SKILL.md)，检查安装目录的 `.venv` 与 PATH；不把缺依赖误判成需要重新登记或登录 Overleaf。
+
 ## 1. 项目档案与恢复
 
-首次开始实质写作时，用 `overleaf-ctl list` 找到项目，必要时按工具层登记已有 Git 项目，再执行：
+首次开始实质写作时，已有登记别名用 `overleaf-ctl list` 定位；未登记的本地 Git 项目可直接使用 `--path`，不要求 Overleaf 账号或远端。执行其中一种：
 
 ```bash
 overleaf-ctl writing init ALIAS
+overleaf-ctl writing init --path /absolute/path/to/local-git-paper
 ```
+
+`ALIAS` 与 `--path` 二选一。路径必须是 Git 项目根目录；普通目录先说明需要 Git 本地隔离，按已获授权初始化 Git 或等待用户决定，不要尝试伪造 Overleaf 登记。
 
 命令仅创建缺少的 `.writing/project.md`、`outline.md`、`progress.md` 和 `layout.json`，保留已有文件。把已知要求和本轮范围填入记录；未知内容标为待补，只在影响当前决策时询问。不要把原样初始化的提示文字当作完成的项目档案。
 

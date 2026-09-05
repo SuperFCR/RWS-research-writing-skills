@@ -5,7 +5,7 @@ description: 使用 overleaf-ctl 管理 Overleaf Git 项目的克隆、登记、
 
 # 工具层
 
-先用 `overleaf-ctl --version` 和 `overleaf-ctl list` 确定版本与项目别名。当前实现是 `0.3.0`。命令可用时直接使用；不要自动重装环境或再次登录。完整命令、认证和编译排错按需读取 [references/cli.md](references/cli.md)。其中 `<skill_dir>` 指上一级根目录。
+先用 `overleaf-ctl --version` 和 `overleaf-ctl list` 确定版本与项目别名。当前实现是 `0.3.1`。命令可用时直接使用；不要自动重装环境或再次登录。命令缺失时先检查上级安装目录的 `.venv` 命令与 [README](../README.md#接入与使用)，用 `scripts/install.py --check` 区分缺依赖和缺 PATH；安装器默认不安装 TeX。完整命令、认证和编译排错按需读取 [references/cli.md](references/cli.md)。其中 `<skill_dir>` 指上一级根目录。
 
 ## 常用命令
 
@@ -13,12 +13,13 @@ description: 使用 overleaf-ctl 管理 Overleaf Git 项目的克隆、登记、
 overleaf-ctl status ALIAS
 overleaf-ctl pull ALIAS
 overleaf-ctl compile ALIAS --no-auto-install
+overleaf-ctl compile --path /absolute/path/to/local-paper --no-auto-install
 overleaf-ctl check-push ALIAS
 overleaf-ctl sync ALIAS --message "Describe the manuscript changes"
 overleaf-ctl push ALIAS
 ```
 
-默认 `compile` 可自动补 TeX 包；`--no-auto-install` 用于环境已齐全或用户不希望安装依赖的情况。主文件与引擎沿用项目配置，多个候选时根据上下文选择并显式传 `--main`；确实无法确定时再问。主文件探测跳过 `.writing/` 和 `.outputs/`。
+`compile --path` 与登记别名二选一，不读取项目 registry，也不要求 Overleaf 账号。默认 `compile` 可自动补 TeX 包；`--no-auto-install` 用于环境已齐全或用户不希望安装依赖的情况。主文件与引擎沿用项目配置，多个候选时根据上下文选择并显式传 `--main`；确实无法确定时再问。主文件探测跳过 `.writing/` 和 `.outputs/`。
 
 ## 推送隔离
 

@@ -49,13 +49,13 @@ def test_require_tool_returns_path_when_found(monkeypatch):
     assert tex.require_tool("latexmk") == "/abs/bin/latexmk"
 
 
-def test_require_tool_raises_with_setup_hint(monkeypatch):
+def test_require_tool_raises_with_optional_tex_hint(monkeypatch):
     monkeypatch.setattr(tex, "locate_tool", lambda name: None)
     with pytest.raises(tex.TexNotFoundError) as ei:
         tex.require_tool("latexmk")
     msg = str(ei.value)
     assert "latexmk" in msg
-    assert "setup.sh" in msg
+    assert "README" in msg
 
 
 # Real `tlmgr search --global --file "/tikz.sty"` output shape:

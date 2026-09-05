@@ -126,7 +126,7 @@ def test_compile_tex_not_found_exits_1_with_setup_hint(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(main, ["compile", "mypaper"])
     assert result.exit_code == 1
-    assert "setup.sh" in result.output
+    assert "README" in result.output
 
 
 def test_compile_bad_engine_value_error_exits_1(monkeypatch):
@@ -226,3 +226,25 @@ def test_compile_open_uses_startfile_on_windows(monkeypatch):
     assert result.exit_code == 0, result.output
     assert opened["path"] == "/repo/.outputs/paper.pdf"
     assert not ran  # no `open` subprocess on windows
+
+
+def test_compile_local_path_without_registry(tmp_path, monkeypatch):
+    from overleaf_sync.compile import CompileResult
+    (tmp_path / 'main.tex').write_text('\\documentclass{article}\\begin{document}hello\\end{document}')
+    def no_registry(*args):
+        raise AssertionError('Local compile must not access project registration')
+    monkeypatch.setattr(cli_mod.registry, 'get_project', no_registry)
+    captured = {}
+    def compile_local(path, main, engine, auto_install):
+        captured.update(path=path, main=main, auto_install=auto_install)
+        return CompileResult(ok=True, pdf_path=str(tmp_path / '.outputs/main.pdf'))
+    monkeypatch.setattr(cli_mod.compile_mod, 'compile_project', compile_local)
+    result = CliRunner().invoke(main, ['compile', '--path', str(tmp_path), '--no-auto-install'])
+    assert result.exit_code == 0, result.output
+    assert captured == {'path': str(tmp_path.resolve()), 'main': 'main.tex', 'auto_install': False}
+
+
+def test_compile_rejects_alias_and_local_path_together(tmp_path):
+    result = CliRunner().invoke(main, ['compile', 'paper', '--path', str(tmp_path)])
+    assert result.exit_code == 2
+    assert not (tmp_path / '.outputs').exists()

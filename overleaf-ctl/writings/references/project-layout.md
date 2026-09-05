@@ -1,6 +1,6 @@
 # 项目布局与初始化
 
-新论文优先使用用户提供的学校/会议/期刊模板。只有没有现有 TeX、用户要求从空项目开始时，运行 `overleaf-ctl writing init ALIAS --scaffold`；命令拒绝覆盖已有源文件或 sections 目录。
+新论文优先使用用户提供的学校/会议/期刊模板。只有没有现有 TeX、用户要求从空项目开始时，运行 `overleaf-ctl writing init ALIAS --scaffold`；也可对本地 Git 根目录使用 `writing init --path DIR --scaffold`。命令拒绝覆盖已有 .tex/.cls/.sty/.bst 源文件或 sections 目录。
 
 默认创建可编译的最小 article 工程：
 

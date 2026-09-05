@@ -79,3 +79,13 @@ def test_clone_failure_does_not_register(monkeypatch, tmp_path):
 
     assert result.exit_code == 1
     assert add_calls == []  # no half-registered project on failed clone
+
+
+def test_relative_clone_destination_is_registered_as_absolute(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    captured = {}
+    monkeypatch.setattr(cli_mod.gitops, 'clone', lambda url, dest: None)
+    monkeypatch.setattr(cli_mod.registry, 'add_project', lambda project: captured.update(project=project))
+    result = CliRunner().invoke(main, ['clone', 'https://git.overleaf.com/PID', 'paper', '--path', 'papers/new'])
+    assert result.exit_code == 0, result.output
+    assert captured['project'].path == str(tmp_path / 'papers/new')

@@ -13,7 +13,7 @@ const venvPython = process.platform === "win32"
 function pythonCandidates() {
   const names = [];
   if (process.env.PYTHON) names.push(process.env.PYTHON);
-  names.push("python3.13", "python3.12", "python3.11", "python3.10", "python3", "python");
+  names.push("python3.14", "python3.13", "python3.12", "python3.11", "python3.10", "python3", "python");
   return names;
 }
 
@@ -68,6 +68,10 @@ function runPython(python) {
 }
 
 if (fs.existsSync(venvPython)) {
+  if (!hasDeps(venvPython)) {
+    console.error("overleaf-ctl: .venv exists but its dependencies are incomplete. Run npm run setup.");
+    process.exit(1);
+  }
   runPython(venvPython);
 }
 

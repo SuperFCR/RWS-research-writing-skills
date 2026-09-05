@@ -244,3 +244,31 @@ def test_explicit_branch_push_does_not_send_configured_extra_refs(local_clone, b
     gitops.push(local_clone)
     assert _git('tag', '--list', cwd=bare_remote).stdout == ''
     assert 'section.tex' in _git('ls-tree', '-r', '--name-only', 'main', cwd=bare_remote).stdout
+
+
+@pytest.mark.parametrize('template', ['venue.cls', 'assets/custom.sty', 'bib/format.bst'])
+def test_scaffold_refuses_template_only_project(tmp_path, template):
+    _git('init', str(tmp_path))
+    write(tmp_path, template, 'Existing venue template')
+    with pytest.raises(ValueError, match='Existing TeX'):
+        writing.initialize(tmp_path, scaffold=True)
+    assert not (tmp_path / 'main.tex').exists()
+    assert not (tmp_path / '.writing').exists()
+    assert (tmp_path / template).read_text() == 'Existing venue template'
+
+
+def test_local_path_init_needs_no_overleaf_account_or_registry(tmp_path, monkeypatch):
+    _git('init', str(tmp_path))
+    def no_registry(*args):
+        raise AssertionError('Local path initialization must not access the registry')
+    monkeypatch.setattr('overleaf_sync.cli.registry.get_project', no_registry)
+    result = CliRunner().invoke(main, ['writing', 'init', '--path', str(tmp_path), '--scaffold'])
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / 'sections/1_intro.tex').is_file()
+    assert _git('remote', cwd=tmp_path).stdout == ''
+
+
+def test_init_rejects_alias_and_path_together_before_changes(tmp_path):
+    result = CliRunner().invoke(main, ['writing', 'init', 'paper', '--path', str(tmp_path)])
+    assert result.exit_code == 2
+    assert list(tmp_path.iterdir()) == []

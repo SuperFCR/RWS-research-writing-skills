@@ -50,3 +50,18 @@ def test_register_accepts_overleaf_repo(monkeypatch, tmp_path):
     assert proj.alias == "mypaper"
     assert proj.path == str(tmp_path)
     assert proj.remote == "https://git.overleaf.com/PID"
+
+
+def test_relative_register_path_remains_usable_after_chdir(local_clone, patched_registry_path, tmp_path, monkeypatch):
+    from tests.conftest import _git
+    from overleaf_sync import registry
+    _git('remote', 'set-url', 'origin', 'https://git.overleaf.com/TEST', cwd=local_clone)
+    monkeypatch.chdir(local_clone.parent)
+    original_add = registry.add_project
+    monkeypatch.setattr(registry, 'add_project', lambda project: original_add(project, patched_registry_path))
+    result = CliRunner().invoke(main, ['register', local_clone.name, 'relative-paper'])
+    assert result.exit_code == 0, result.output
+    monkeypatch.chdir(tmp_path)
+    project = registry.get_project('relative-paper', patched_registry_path)
+    assert project.path == str(local_clone.resolve())
+    assert cli_mod.gitops.is_git_repo(project.path)

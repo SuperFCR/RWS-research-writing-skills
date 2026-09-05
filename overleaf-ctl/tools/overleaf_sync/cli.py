@@ -115,7 +115,7 @@ def logout(host: str, yes: bool) -> None:
 @_handle_registry_errors
 def clone(url: str, alias: str, dest: str | None) -> None:
     """克隆 Overleaf 项目到本地并登记到 registry。"""
-    target = Path(dest) if dest else Path.home() / "overleaf" / alias
+    target = (Path(dest).expanduser() if dest else Path.home() / "overleaf" / alias).resolve()
     try:
         gitops.clone(url, target)
     except gitops.GitError as exc:
@@ -134,6 +134,7 @@ def clone(url: str, alias: str, dest: str | None) -> None:
 @_handle_registry_errors
 def register(path: str, alias: str) -> None:
     """把已有的本地 Overleaf git 仓库登记到 registry。"""
+    path = str(Path(path).expanduser().resolve())
     if not gitops.is_git_repo(path):
         err_console.print(f"[red]{path} 不是 git 仓库，无法登记。[/red]")
         raise SystemExit(1)
@@ -301,7 +302,7 @@ def open_cmd(alias: str) -> None:
     console.print(f"[green]已用 VSCode 打开 {repo}[/green]")
 
 
-def _choose_main(alias: str, exc) -> str:
+def _choose_main(alias: str | None, exc) -> str:
     """Interactive fallback for an ambiguous main file.
 
     Offers a numbered choice of the candidates and persists the pick to the
@@ -322,7 +323,7 @@ def _choose_main(alias: str, exc) -> str:
         err_console.print(f"[red]{exc}[/red]")
         raise SystemExit(1)
     chosen = candidates[idx - 1]
-    projects = registry.load_registry()
+    projects = registry.load_registry() if alias else {}
     if alias in projects:
         projects[alias].main = chosen
         registry.save_registry(projects)
@@ -331,7 +332,9 @@ def _choose_main(alias: str, exc) -> str:
 
 
 @main.command(name="compile")
-@click.argument("alias")
+@click.argument("alias", required=False)
+@click.option("--path", "project_path", type=click.Path(exists=True, file_okay=False),
+              help="Compile a local directory without registration or an Overleaf account.")
 @click.option("--main", "main_override", default=None, help="主文件，覆盖 registry。")
 @click.option("--engine", "engine_override", default=None,
               help="引擎 pdflatex|xelatex|lualatex，覆盖 registry。")
@@ -339,10 +342,13 @@ def _choose_main(alias: str, exc) -> str:
 @click.option("--no-auto-install", "no_auto_install", is_flag=True,
               help="关闭缺包自动补。")
 @_handle_registry_errors
-def compile_cmd(alias: str, main_override: str | None, engine_override: str | None,
+def compile_cmd(alias: str | None, project_path: str | None, main_override: str | None, engine_override: str | None,
                 open_pdf: bool, no_auto_install: bool) -> None:
     """本地 latexmk 编译（缺包自动补），可选 --open 打开 PDF。"""
-    proj = registry.get_project(alias)
+    if bool(alias) == bool(project_path):
+        raise click.UsageError("Provide exactly one project ALIAS or --path DIR.")
+    proj = (Project(alias="local", path=str(Path(project_path).resolve()), remote="")
+            if project_path else registry.get_project(alias))
     try:
         try:
             main_tex = compile_mod.detect_main(
@@ -362,7 +368,7 @@ def compile_cmd(alias: str, main_override: str | None, engine_override: str | No
         raise SystemExit(1)
     except tex.TexNotFoundError as exc:
         err_console.print(f"[red]{exc}[/red]")
-        err_console.print("[yellow]请先运行 setup.sh 安装 TinyTeX。[/yellow]")
+        err_console.print("[yellow]请查看 README 的可选 TeX 依赖说明；CLI 安装器不安装 TeX。[/yellow]")
         raise SystemExit(1)
     except ValueError as exc:
         err_console.print(f"[red]{exc}[/red]")
@@ -387,14 +393,18 @@ def writing_cmd() -> None:
 
 
 @writing_cmd.command(name="init")
-@click.argument("alias")
+@click.argument("alias", required=False)
+@click.option("--path", "project_path", type=click.Path(exists=True, file_okay=False), help="直接使用本地 Git 项目根目录，无需登记或 Overleaf 远端。")
 @click.option("--scaffold", is_flag=True, help="仅无现有 TeX 时创建 sections/ 模板。")
 @click.option("--local-only", multiple=True, help="额外本地路径（不取消已跟踪文件）。")
 @_handle_registry_errors
-def writing_init(alias: str, scaffold: bool, local_only: tuple[str, ...]) -> None:
+def writing_init(alias: str | None, project_path: str | None, scaffold: bool, local_only: tuple[str, ...]) -> None:
     import json
+    if bool(alias) == bool(project_path):
+        raise click.UsageError("Provide exactly one project ALIAS or --path DIR.")
+    repo = project_path if project_path else registry.get_project(alias).path
     try:
-        result = writing.initialize(registry.get_project(alias).path, scaffold, list(local_only))
+        result = writing.initialize(repo, scaffold, list(local_only))
     except (ValueError, OSError) as exc:
         raise click.ClickException(str(exc)) from exc
     click.echo(json.dumps(result, indent=2, ensure_ascii=False))

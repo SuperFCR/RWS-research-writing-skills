@@ -99,7 +99,9 @@ def initialize(repo: str | Path, scaffold: bool = False, local_only: list[str] |
     layout = inspect_layout(repo)
     # Check all scaffold conditions before creating any files, even .writing.
     generated = scaffold_files() if scaffold else {}
-    if scaffold and (layout["tex_files"] or any((repo / p).exists() or (repo / p).is_symlink() for p in generated)
+    templates = [p for p in repo.rglob("*") if p.suffix.lower() in {".cls", ".sty", ".bst"}
+                 and not ({".git", ".writing", ".outputs"} & set(p.relative_to(repo).parts))] if scaffold else []
+    if scaffold and (layout["tex_files"] or templates or any((repo / p).exists() or (repo / p).is_symlink() for p in generated)
                      or (repo / "sections").exists() or (repo / "sections").is_symlink()):
         raise ValueError("Existing TeX sources/template detected. Initialize records without --scaffold; preserve the current layout.")
     gitops.ensure_local_excludes(repo, gitops.TEX_LOCAL_EXCLUDES)

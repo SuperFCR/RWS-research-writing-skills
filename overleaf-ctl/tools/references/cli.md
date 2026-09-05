@@ -6,72 +6,24 @@
 - **编译**在本地用 TinyTeX（对齐 Overleaf 的 pdflatex 引擎）跑 `latexmk`，缺包自动 `tlmgr install` 补上。
 - **sync 语义是自动提交式（类 Dropbox）**：auto-commit → `pull --rebase` → `push`。冲突时**永远停下让你手动解决，绝不自动覆盖**。
 
-`overleaf-ctl --version` 应输出 **0.3.0**。
+`overleaf-ctl --version` 应输出 **0.3.1**。
 
 同步保护和新增 writing/check-push 命令以 [工具层入口](../SKILL.md) 为准；sync/push 指定 origin 的当前 upstream 分支，并检查本地记录泄漏。
 
 ## 环境准备
 
-SKILL.md 中的 `<skill_dir>` 指本 skill 的安装目录（根入口 SKILL.md 所在目录，不是本参考文件目录）。Claude Code 触发 skill 时会告知 base directory，用它替换所有 `<skill_dir>`。
+`<skill_dir>` 指根入口 SKILL.md 所在的完整安装目录。依赖与安装以 [README](../../README.md#接入与使用) 为准。已有命令可用时直接使用；命令不在 PATH 时先尝试该目录的 `.venv/bin/overleaf-ctl`（Windows 为 `.venv/Scripts/overleaf-ctl.exe`），不要误判成必须重装。
 
-本机通常已把 `overleaf-ctl` 放到 PATH 上；优先直接使用命令，不要再回退到旧的 `overleaf` 命名。执行前确认一下：
-
-```bash
-overleaf-ctl --version    # 应输出 0.3.0
-
-# 万一软链丢了/没装，重建：
-test -x <skill_dir>/.venv/bin/overleaf-ctl || bash <skill_dir>/setup.sh
-ln -sfn <skill_dir>/.venv/bin/overleaf-ctl ~/.local/bin/overleaf-ctl && overleaf-ctl --version
-```
-
-如果这个 skill 是作为 npm 包仓库使用，推荐安装路径是：
+新安装使用 Python ≥ 3.10 和 Git：
 
 ```bash
-cd <skill_dir>
-npm link
-overleaf-ctl --version
-
-# 当前 Python 环境缺 click/rich 时再跑：
-npm run setup
-
-# 缺 latexmk/tlmgr 或需要完整初始化 TinyTeX 时再跑：
-npm run setup:full
+python3 <skill_dir>/scripts/install.py --link-skill codex --link-cli
+python3 <skill_dir>/scripts/install.py --check
 ```
 
-环境依赖：
+安装器仅准备 CLI 的独立虚拟环境和运行依赖。Node/npm 可选，TeX 编译需要另备引擎和 latexmk；tlmgr 只用于 TeX Live/TinyTeX 自动补包。不会因安装 CLI 而安装 TeX、改全局 pip 配置或登录账号。测试依赖显式用 `--dev`，pip 源可显式用 `--index-url`。
 
-| 依赖 | 用途 | 处理方式 |
-|---|---|---|
-| Node.js >= 18 | npm wrapper / `npm link` | `node --version` 检查 |
-| Python >= 3.10 | 运行核心 CLI | `python3 --version` 检查 |
-| click / rich | CLI 参数和输出 | `npm run setup` 或 `pip install -e .` |
-| git | clone/sync/pull/push | `git --version` 检查 |
-| macOS Keychain + git credential helper | 保存 Overleaf token | `overleaf-ctl login` 会配置 |
-| latexmk | 本地编译 | TinyTeX/MacTeX 提供 |
-| tlmgr | 自动/手动补 TeX 包 | TinyTeX/MacTeX 提供 |
-
-`setup.sh` 会在 skill 目录建 `.venv`、`pip install -e .`（依赖 `click`/`rich`，用清华镜像绕开本机坏掉的 `~/.pip/pip.conf`），软链全局命令，并幂等安装 TinyTeX。手动 pip 时请加 `--index-url https://pypi.tuna.tsinghua.edu.cn/simple`。
-
-TeX 工具链支持 TinyTeX 和 MacTeX。优先推荐 TinyTeX，因为轻量且适合按需补包：
-
-```bash
-which latexmk || true
-which tlmgr || true
-ls ~/Library/TinyTeX/bin/*/latexmk 2>/dev/null || true
-ls ~/Library/TinyTeX/bin/*/tlmgr 2>/dev/null || true
-
-# 手动安装 TinyTeX
-curl -sL "https://yihui.org/tinytex/install-bin-unix.sh" | sh
-~/Library/TinyTeX/bin/*/tlmgr install latexmk latex-bin xetex
-```
-
-MacTeX 也可以用，体积更大但包更全：
-
-```bash
-brew install --cask mactex
-```
-
-> ⚠️ **token 只进 macOS Keychain。** registry、`.git/config`、日志里都不出现 token。Overleaf git token 形如 `olp_xxxx`，在 Overleaf → Account Settings → Git Integration → Create Token 生成。
+Git 凭据使用平台 credential helper：macOS 为 Keychain，Windows 为 Git Credential Manager，Linux 使用已配置的 helper（代码回退为临时 cache）。令牌不进入项目 registry、档案或仓库。同步需要对应 Overleaf 项目的 Git 访问权限；本地写作档案初始化不需要远端。
 
 ## 命令速查
 
@@ -133,7 +85,7 @@ overleaf-ctl compile mypaper --open                      # 编译后用系统默
 overleaf-ctl compile mypaper --main paper.tex --engine xelatex   # 指定主文件 / 引擎
 overleaf-ctl compile mypaper --no-auto-install           # 关掉缺包自动补
 ```
-主文件探测顺序：registry 里的 `main` / `--main` > 找同时含 `\documentclass` 与 `\begin{document}` 的 `.tex`（先扫根目录，根目录没有再递归扫子文件夹，跳过 `.git`/`.outputs`/`.writing`——子文件夹布局如 `T2V/main.tex` 开箱即用）。多个候选时交互式列编号让用户选，选择记入 registry 下次不再问；非交互场景报错列候选，用 `--main` 指定。缺 `latexmk`/`tlmgr` → 提示跑 `bash <skill_dir>/setup.sh` 装 TinyTeX。
+主文件探测顺序：registry 里的 `main` / `--main` > 找同时含 `\documentclass` 与 `\begin{document}` 的 `.tex`（先扫根目录，根目录没有再递归扫子文件夹，跳过 `.git`/`.outputs`/`.writing`——子文件夹布局如 `T2V/main.tex` 开箱即用）。多个候选时交互式列编号让用户选，选择记入 registry 下次不再问；非交互场景报错列候选，用 `--main` 指定。缺少 TeX 工具时，按 README 准备相应发行版；CLI 安装器不安装 TeX。
 
 编译产物统一写到项目内 `.outputs/`：`main.pdf`、`main.aux`、`main.log`、`main.bbl` 等都不再落在项目根目录；`.outputs/` 会写进 `.git/info/exclude`，`overleaf-ctl sync` 不会把它推到 Overleaf。
 
