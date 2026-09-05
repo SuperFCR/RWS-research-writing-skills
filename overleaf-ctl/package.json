@@ -12,6 +12,7 @@
     "bin/",
     "docs/assets/",
     "README.md",
+    "README.zh-CN.md",
     "SKILL.md",
     "LEGAL.md",
     "pyproject.toml",
