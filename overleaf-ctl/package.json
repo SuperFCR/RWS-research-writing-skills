@@ -1,0 +1,43 @@
+{
+  "name": "overleaf-ctl",
+  "version": "0.3.0",
+  "description": "Overleaf tools and evidence-driven LaTeX writing skills with guarded Git publication.",
+  "license": "UNLICENSED",
+  "private": true,
+  "bin": {
+    "overleaf-ctl": "bin/overleaf-ctl.js",
+    "overleaf": "bin/overleaf-ctl.js"
+  },
+  "files": [
+    "bin/",
+    "docs/assets/",
+    "scripts/",
+    "README.md",
+    "SKILL.md",
+    "LEGAL.md",
+    "pyproject.toml",
+    "requirements.txt",
+    "setup.sh",
+    "agents/",
+    "tools/SKILL.md",
+    "tools/references/",
+    "tools/overleaf_sync/*.py",
+    "writings/SKILL.md",
+    "writings/references/"
+  ],
+  "scripts": {
+    "setup": "node scripts/bootstrap-python.js",
+    "setup:dev": "node scripts/bootstrap-python.js --dev",
+    "setup:full": "bash setup.sh",
+    "test": "node scripts/bootstrap-python.js --dev && .venv/bin/python -m pytest -q",
+    "check:skill": "node scripts/link-skill.js all --dry-run",
+    "link:skill": "node scripts/link-skill.js all",
+    "link:skill:codex": "node scripts/link-skill.js codex",
+    "link:skill:cc": "node scripts/link-skill.js cc",
+    "link:skill:agents": "node scripts/link-skill.js agents",
+    "link:skill:legacy-agents": "node scripts/link-skill.js legacy-agents"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Overleaf 论文工作台"
+  short_description: "在现有 TeX 章节上写作、核验证据、审查并安全同步 Overleaf"
+  default_prompt: "使用 $overleaf-ctl 继续当前论文，先读取本地档案与活动 TeX 章节，再推进写作和审查。"

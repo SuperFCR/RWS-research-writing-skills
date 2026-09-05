@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "overleaf-ctl"
+version = "0.3.0"
+description = "Local VSCode + git two-way sync + local LaTeX compile controller for Overleaf"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LEGAL.md" }
+authors = [{ name = "falcary" }]
+dependencies = [
+    "click>=8.2",
+    "rich>=13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "tomli; python_version<'3.11'"]
+
+[project.scripts]
+overleaf-ctl = "overleaf_sync.cli:main"
+overleaf = "overleaf_sync.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "tools"}
+packages = ["overleaf_sync"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tools"]
